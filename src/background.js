@@ -33,7 +33,6 @@ async function createWindow() {
     createProtocol('app')
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
-    autoUpdater.checkForUpdatesAndNotify()
   }
 }
 
@@ -55,6 +54,35 @@ app.on('activate', () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+
+function sendStatusToWindow(status, params) {
+  win.webContents.send(status, params)
+}
+
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('Checking for update...')
+})
+
+autoUpdater.on('update-available', (info) => {
+  // version can be updated
+  sendStatusToWindow('autoUpdater-canUpdate', info)
+})
+
+autoUpdater.on('error', (err) => {
+  // Update Error
+  sendStatusToWindow('autoUpdater-error', err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  // download progress being downloaded
+  sendStatusToWindow('autoUpdater-progress', progressObj)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  // Download completed
+  sendStatusToWindow('autoUpdater-downloaded')
+})
+
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
@@ -65,6 +93,10 @@ app.on('ready', async () => {
     }
   }
   createWindow()
+  setTimeout(() => {
+    // detect whether there are updates
+    autoUpdater.checkForUpdates()
+  }, 1500)
 })
 
 // Exit cleanly on request from parent process in development mode.
