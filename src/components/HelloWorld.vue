@@ -1,7 +1,7 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    Version 0.4.3
+    Version 0.5.0
     <p>
       For a guide and recipes on how to configure / customize this project,<br>
       check out the
@@ -36,6 +36,14 @@ export default {
   name: 'HelloWorld',
   props: {
     msg: String
+  },
+  created() {
+    // require('electron').ipcRenderer.on('checking-for-update', (event, message) => {
+    //   console.log(message) // Prints 'whoooooooh!'
+    // })
+    // require('electron').ipcRenderer.on('update-available', (event, message) => {
+    //   console.log(message) // Prints 'whoooooooh!'
+    // })
   }
 }
 </script>

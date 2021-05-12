@@ -4,6 +4,8 @@ import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { autoUpdater } from 'electron-updater'
+import log from 'electron-log'
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -55,33 +57,36 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 
-function sendStatusToWindow(status, params) {
-  win.webContents.send(status, params)
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
+
+function sendStatusToWindow(text) {
+  log.info(text);
+  win.webContents.send('message', text);
 }
 
 autoUpdater.on('checking-for-update', () => {
-  sendStatusToWindow('Checking for update...')
+  sendStatusToWindow('Checking for update...');
 })
-
 autoUpdater.on('update-available', (info) => {
-  // version can be updated
-  sendStatusToWindow('autoUpdater-canUpdate', info)
+  sendStatusToWindow('Update available.');
 })
-
+autoUpdater.on('update-not-available', (info) => {
+  sendStatusToWindow('Update not available.');
+})
 autoUpdater.on('error', (err) => {
-  // Update Error
-  sendStatusToWindow('autoUpdater-error', err)
+  sendStatusToWindow('Error in auto-updater. ' + err);
 })
-
 autoUpdater.on('download-progress', (progressObj) => {
-  // download progress being downloaded
-  sendStatusToWindow('autoUpdater-progress', progressObj)
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  sendStatusToWindow(log_message);
 })
-
 autoUpdater.on('update-downloaded', (info) => {
-  // Download completed
-  sendStatusToWindow('autoUpdater-downloaded')
-})
+  sendStatusToWindow('Update downloaded');
+});
 
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
@@ -93,11 +98,11 @@ app.on('ready', async () => {
     }
   }
   createWindow()
-  setTimeout(() => {
-    // detect whether there are updates
-    autoUpdater.checkForUpdates()
-  }, 1500)
 })
+
+app.on('ready', function()  {
+  autoUpdater.checkForUpdatesAndNotify()
+});
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
